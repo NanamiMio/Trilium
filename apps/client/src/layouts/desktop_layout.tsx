@@ -21,7 +21,6 @@ import NoteTreeWidget from "../widgets/note_tree.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import options from "../services/options.js";
 import PasswordNoteSetDialog from "../widgets/dialogs/password_not_set.js";
-import PromotedAttributesWidget from "../widgets/promoted_attributes.js";
 import QuickSearchWidget from "../widgets/quick_search.js";
 import ReadOnlyNoteInfoBar from "../widgets/ReadOnlyNoteInfoBar.jsx";
 import Ribbon from "../widgets/ribbon/Ribbon.jsx";
@@ -44,6 +43,7 @@ import UploadAttachmentsDialog from "../widgets/dialogs/upload_attachments.js";
 import utils from "../services/utils.js";
 import WatchedFileUpdateStatusWidget from "../widgets/watched_file_update_status.js";
 import NoteDetail from "../widgets/NoteDetail.jsx";
+import PromotedAttributes from "../widgets/PromotedAttributes.jsx";
 
 export default class DesktopLayout {
 
@@ -140,7 +140,7 @@ export default class DesktopLayout {
                                                                     .child(<ReadOnlyNoteInfoBar />)
                                                                     .child(<SharedInfo />)
                                                                 )
-                                                                .child(new PromotedAttributesWidget())
+                                                                .child(<PromotedAttributes />)
                                                                 .child(<SqlTableSchemas />)
                                                                 .child(<NoteDetail />)
                                                                 .child(<NoteList media="screen" />)

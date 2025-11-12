@@ -12,102 +12,6 @@ import type { Attribute } from "../services/attribute_parser.js";
 import type FAttribute from "../entities/fattribute.js";
 import type { EventData } from "../components/app_context.js";
 
-const TPL = /*html*/`
-<div class="promoted-attributes-widget">
-    <style>
-    body.mobile .promoted-attributes-widget {
-        /* https://github.com/zadam/trilium/issues/4468 */
-        flex-shrink: 0.4;
-        overflow: auto;
-    }
-
-    .promoted-attributes-container {
-        margin: 0 1.5em;
-        overflow: auto;
-        max-height: 400px;
-        flex-wrap: wrap;
-        display: table;
-    }
-    .promoted-attribute-cell {
-        display: flex;
-        align-items: center;
-        margin: 10px;
-        display: table-row;
-    }
-    .promoted-attribute-cell > label {
-        user-select: none;
-        font-weight: bold;
-        vertical-align: middle;
-    }
-    .promoted-attribute-cell > * {
-        display: table-cell;
-        padding: 1px 0;
-    }
-
-    .promoted-attribute-cell div.input-group {
-        margin-inline-start: 10px;
-        display: flex;
-        min-height: 40px;
-    }
-    .promoted-attribute-cell strong {
-        word-break:keep-all;
-        white-space: nowrap;
-    }
-
-    .promoted-attribute-cell input[type="checkbox"] {
-        width: 22px !important;
-        flex-grow: 0;
-        width: unset;
-    }
-
-    /* Restore default apperance */
-    .promoted-attribute-cell input[type="number"],
-    .promoted-attribute-cell input[type="checkbox"] {
-        appearance: auto;
-    }
-
-    .promoted-attribute-cell input[type="color"] {
-        width: 24px;
-        height: 24px;
-        margin-top: 2px;
-        appearance: none;
-        padding: 0;
-        border: 0;
-        outline: none;
-        border-radius: 25% !important;
-    }
-
-    .promoted-attribute-cell input[type="color"]::-webkit-color-swatch-wrapper {
-        padding: 0;
-    }
-
-    .promoted-attribute-cell input[type="color"]::-webkit-color-swatch {
-        border: none;
-        border-radius: 25%;
-    }
-
-    .promoted-attribute-label-color input[type="hidden"][value=""] + input[type="color"] {
-        position: relative;
-        opacity: 0.5;
-    }
-
-    .promoted-attribute-label-color input[type="hidden"][value=""] + input[type="color"]:after {
-        content: "";
-        position: absolute;
-        top: 10px;
-        inset-inline-start: 0px;
-        inset-inline-end: 0;
-        height: 2px;
-        background: rgba(0, 0, 0, 0.5);
-        transform: rotate(45deg);
-        pointer-events: none;
-    }
-
-    </style>
-
-    <div class="promoted-attributes-container"></div>
-</div>`;
-
 // TODO: Deduplicate
 interface AttributeResult {
     attributeId: string;
@@ -117,112 +21,19 @@ export default class PromotedAttributesWidget extends NoteContextAwareWidget {
 
     private $container!: JQuery<HTMLElement>;
 
-    get name() {
-        return "promotedAttributes";
-    }
-
-    get toggleCommand() {
-        return "toggleRibbonTabPromotedAttributes";
-    }
-
     doRender() {
-        this.$widget = $(TPL);
+        this.$widget = $("");
         this.contentSized();
         this.$container = this.$widget.find(".promoted-attributes-container");
     }
 
-    getTitle(note: FNote) {
-        const promotedDefAttrs = note.getPromotedDefinitionAttributes();
-
-        if (promotedDefAttrs.length === 0) {
-            return { show: false };
-        }
-
-        return {
-            show: true,
-            activate: options.is("promotedAttributesOpenInRibbon"),
-            title: t("promoted_attributes.promoted_attributes"),
-            icon: "bx bx-table"
-        };
-    }
-
-    async refreshWithNote(note: FNote) {
-        this.$container.empty();
-
-        const promotedDefAttrs = note.getPromotedDefinitionAttributes();
-        const ownedAttributes = note.getOwnedAttributes();
-        // attrs are not resorted if position changes after the initial load
-        // promoted attrs are sorted primarily by order of definitions, but with multi-valued promoted attrs
-        // the order of attributes is important as well
-        ownedAttributes.sort((a, b) => a.position - b.position);
-
-        if (promotedDefAttrs.length === 0 || note.getLabelValue("viewType") === "table") {
-            this.toggleInt(false);
-            return;
-        }
-
-        const $cells: JQuery<HTMLElement>[] = [];
-
-        for (const definitionAttr of promotedDefAttrs) {
-            const valueType = definitionAttr.name.startsWith("label:") ? "label" : "relation";
-            const valueName = definitionAttr.name.substr(valueType.length + 1);
-
-            let valueAttrs = ownedAttributes.filter((el) => el.name === valueName && el.type === valueType) as Attribute[];
-
-            if (valueAttrs.length === 0) {
-                valueAttrs.push({
-                    attributeId: "",
-                    type: valueType,
-                    name: valueName,
-                    value: ""
-                });
-            }
-
-            if (definitionAttr.getDefinition().multiplicity === "single") {
-                valueAttrs = valueAttrs.slice(0, 1);
-            }
-
-            for (const valueAttr of valueAttrs) {
-                const $cell = await this.createPromotedAttributeCell(definitionAttr, valueAttr, valueName);
-
-                if ($cell) {
-                    $cells.push($cell);
-                }
-            }
-        }
-
-        // we replace the whole content in one step, so there can't be any race conditions
-        // (previously we saw promoted attributes doubling)
-        this.$container.empty().append(...$cells);
-        this.toggleInt(true);
-    }
-
     async createPromotedAttributeCell(definitionAttr: FAttribute, valueAttr: Attribute, valueName: string) {
-        const definition = definitionAttr.getDefinition();
-        const id = `value-${valueAttr.attributeId}`;
-
-        const $input = $("<input>")
-            .prop("tabindex", 200 + definitionAttr.position)
-            .prop("id", id)
-            .attr("data-attribute-id", valueAttr.noteId === this.noteId ? valueAttr.attributeId ?? "" : "") // if not owned, we'll force creation of a new attribute instead of updating the inherited one
-            .attr("data-attribute-type", valueAttr.type)
-            .attr("data-attribute-name", valueAttr.name)
-            .prop("value", valueAttr.value)
-            .prop("placeholder", t("promoted_attributes.unset-field-placeholder"))
-            .addClass("form-control")
-            .addClass("promoted-attribute-input")
-            .on("change", (event) => this.promotedAttributeChanged(event));
+            // .on("change", (event) => this.promotedAttributeChanged(event));
 
         const $actionCell = $("<div>");
         const $multiplicityCell = $("<td>").addClass("multiplicity").attr("nowrap", "true");
 
         const $wrapper = $('<div class="promoted-attribute-cell">')
-            .append(
-                $("<label>")
-                    .prop("for", id)
-                    .text(definition.promotedAlias ?? valueName)
-            )
-            .append($("<div>").addClass("input-group").append($input))
             .append($actionCell)
             .append($multiplicityCell);
 
