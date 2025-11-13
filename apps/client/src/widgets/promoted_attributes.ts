@@ -30,12 +30,7 @@ export default class PromotedAttributesWidget extends NoteContextAwareWidget {
     async createPromotedAttributeCell(definitionAttr: FAttribute, valueAttr: Attribute, valueName: string) {
             // .on("change", (event) => this.promotedAttributeChanged(event));
 
-        const $actionCell = $("<div>");
         const $multiplicityCell = $("<td>").addClass("multiplicity").attr("nowrap", "true");
-
-        const $wrapper = $('<div class="promoted-attribute-cell">')
-            .append($actionCell)
-            .append($multiplicityCell);
 
         if (valueAttr.type === "label") {
             $wrapper.addClass(`promoted-attribute-label-${definition.labelType}`);
@@ -170,8 +165,6 @@ export default class PromotedAttributesWidget extends NoteContextAwareWidget {
 
         if (definition.multiplicity === "multi") {
             const $addButton = $("<span>")
-                .addClass("bx bx-plus pointer tn-tool-button")
-                .prop("title", t("promoted_attributes.add_new_attribute"))
                 .on("click", async () => {
                     const $new = await this.createPromotedAttributeCell(
                         definitionAttr,

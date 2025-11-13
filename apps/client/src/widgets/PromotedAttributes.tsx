@@ -5,6 +5,7 @@ import { Attribute } from "../services/attribute_parser";
 import { ComponentChild } from "preact";
 import FAttribute from "../entities/fattribute";
 import { t } from "../services/i18n";
+import ActionButton from "./react/ActionButton";
 
 export default function PromotedAttributes() {
     const { note } = useNoteContext();
@@ -94,6 +95,26 @@ function PromotedAttributeCell({ noteId, definitionAttr, valueAttr, valueName }:
                     placeholder={t("promoted_attributes.unset-field-placeholder")}
                 />
             </div>
+
+            <div />
+
+            {definition.multiplicity === "multi" && (
+                <td className="multiplicity">
+                    <ActionButton
+                        icon="bx bx-plus"
+                        className="pointer tn-tool-button"
+                        text={t("promoted_attributes.add_new_attribute")}
+                        noIconActionClass
+                    />
+
+                    <ActionButton
+                        icon="bx bx-trash"
+                        className="pointer tn-tool-button"
+                        text={t("promoted_attributes.remove_this_attribute")}
+                        noIconActionClass
+                    />
+                </td>
+            )}
         </div>
     )
 }
